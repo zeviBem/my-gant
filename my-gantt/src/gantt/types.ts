@@ -1,4 +1,4 @@
-export type TimeScale = "hour" | "day" | "week" | "month" | "year" | "custom";
+export type TimeScale = "minute" | "hour" | "day" | "week" | "month" | "year" | "custom";
 
 export interface Task {
   id: string;

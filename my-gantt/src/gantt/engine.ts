@@ -6,32 +6,6 @@ import type {
   TimelineUnit,
 } from "./types";
 
-function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-function startOfWeek(d: Date): Date {
-  const x = startOfDay(d);
-  x.setDate(x.getDate() - x.getDay());
-  return x;
-}
-
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function startOfYear(d: Date): Date {
-  return new Date(d.getFullYear(), 0, 1);
-}
-
 interface ScaleStrategy {
   buildRange(anchor: Date): { start: Date; end: Date };
   buildUnits(range: { start: Date; end: Date }): TimelineUnit[];
@@ -42,79 +16,106 @@ const MONTH_NAMES = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 const SCALES: Record<Exclude<TimeScale, "custom">, ScaleStrategy> = {
-  hour: {
+  minute: {
     buildRange(anchor) {
-      const end = new Date(anchor);
-      const start = new Date(end.getTime() - 60 * 60 * 1000);
+      const start = new Date(anchor.getTime() - 30 * 1000);
+      const end = new Date(anchor.getTime() + 30 * 1000);
       return { start, end };
     },
     buildUnits({ start }) {
       return Array.from({ length: 12 }, (_, i) => {
-        const s = new Date(start.getTime() + i * 5 * 60 * 1000);
-        const e = new Date(s.getTime() + 5 * 60 * 1000);
-        const label = `${String(s.getHours()).padStart(2, "0")}:${String(s.getMinutes()).padStart(2, "0")}`;
-        return { start: s, end: e, label };
+        const s = new Date(start.getTime() + i * 5 * 1000);
+        const e = new Date(s.getTime() + 5 * 1000);
+        return {
+          start: s,
+          end: e,
+          label: `${pad2(s.getHours())}:${pad2(s.getMinutes())}:${pad2(s.getSeconds())}`,
+        };
+      });
+    },
+  },
+  hour: {
+    buildRange(anchor) {
+      const start = new Date(anchor.getTime() - 30 * MINUTE_MS);
+      const end = new Date(anchor.getTime() + 30 * MINUTE_MS);
+      return { start, end };
+    },
+    buildUnits({ start }) {
+      return Array.from({ length: 12 }, (_, i) => {
+        const s = new Date(start.getTime() + i * 5 * MINUTE_MS);
+        const e = new Date(s.getTime() + 5 * MINUTE_MS);
+        return { start: s, end: e, label: `${pad2(s.getHours())}:${pad2(s.getMinutes())}` };
       });
     },
   },
   day: {
     buildRange(anchor) {
-      const start = startOfDay(anchor);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
+      const start = new Date(anchor.getTime() - 12 * HOUR_MS);
+      const end = new Date(anchor.getTime() + 12 * HOUR_MS);
       return { start, end };
     },
     buildUnits({ start }) {
-      return Array.from({ length: 24 }, (_, h) => {
-        const s = new Date(start);
-        s.setHours(h, 0, 0, 0);
-        const e = new Date(s);
-        e.setHours(h + 1);
-        return { start: s, end: e, label: `${String(h).padStart(2, "0")}:00` };
+      return Array.from({ length: 24 }, (_, i) => {
+        const s = new Date(start.getTime() + i * HOUR_MS);
+        const e = new Date(s.getTime() + HOUR_MS);
+        return { start: s, end: e, label: `${pad2(s.getHours())}:00` };
       });
     },
   },
   week: {
     buildRange(anchor) {
-      const start = startOfWeek(anchor);
-      return { start, end: addDays(start, 7) };
+      const half = 3.5 * DAY_MS;
+      return {
+        start: new Date(anchor.getTime() - half),
+        end: new Date(anchor.getTime() + half),
+      };
     },
     buildUnits({ start }) {
-      const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       return Array.from({ length: 7 }, (_, i) => {
-        const s = addDays(start, i);
-        const e = addDays(s, 1);
-        return { start: s, end: e, label: `${names[i]} ${s.getDate()}` };
+        const s = new Date(start.getTime() + i * DAY_MS);
+        const e = new Date(s.getTime() + DAY_MS);
+        return { start: s, end: e, label: `${DAY_NAMES[s.getDay()]} ${s.getDate()}` };
       });
     },
   },
   month: {
     buildRange(anchor) {
-      const start = startOfMonth(anchor);
-      return { start, end: addDays(start, 28) };
+      const half = 15 * DAY_MS;
+      return {
+        start: new Date(anchor.getTime() - half),
+        end: new Date(anchor.getTime() + half),
+      };
     },
-    buildUnits({ start }) {
+    buildUnits({ start, end }) {
+      const segment = (end.getTime() - start.getTime()) / 4;
       return Array.from({ length: 4 }, (_, i) => {
-        const s = addDays(start, i * 7);
-        const e = addDays(s, 7);
+        const s = new Date(start.getTime() + i * segment);
+        const e = new Date(start.getTime() + (i + 1) * segment);
         return { start: s, end: e, label: `Week ${i + 1}` };
       });
     },
   },
   year: {
     buildRange(anchor) {
-      const start = startOfYear(anchor);
-      const end = new Date(start.getFullYear() + 1, 0, 1);
+      const start = new Date(anchor);
+      start.setMonth(start.getMonth() - 6);
+      const end = new Date(anchor);
+      end.setMonth(end.getMonth() + 6);
       return { start, end };
     },
     buildUnits({ start }) {
-      const year = start.getFullYear();
-      return Array.from({ length: 12 }, (_, m) => ({
-        start: new Date(year, m, 1),
-        end: new Date(year, m + 1, 1),
-        label: MONTH_NAMES[m],
-      }));
+      return Array.from({ length: 12 }, (_, i) => {
+        const s = new Date(start.getFullYear(), start.getMonth() + i, 1);
+        const e = new Date(start.getFullYear(), start.getMonth() + i + 1, 1);
+        return { start: s, end: e, label: MONTH_NAMES[s.getMonth()] };
+      });
     },
   },
 };

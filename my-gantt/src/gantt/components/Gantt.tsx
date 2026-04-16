@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import type { GanttConfig, Task, TimeScale } from "../types";
 import { getCustomRange, getTimeScaleRange, layoutTasks } from "../engine";
 import { TaskRow } from "./TaskRow";
@@ -7,7 +17,6 @@ import { CurrentTimeLine } from "./CurrentTimeLine";
 import { AddTaskModal } from "./AddTaskModal";
 import { TimelineFooter } from "./TimelineFooter";
 import { getTimeScale } from "../engine/timeScaleEngine";
-import "../Gantt.css";
 
 interface Props {
   tasks: Task[];
@@ -17,6 +26,7 @@ interface Props {
 }
 
 const MIN_UNIT_WIDTH: Record<TimeScale, number> = {
+  minute: 60,
   hour: 60,
   day: 50,
   week: 80,
@@ -37,9 +47,7 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
   const [editingId, setEditingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [hourEntryTime, setHourEntryTime] = useState<Date | null>(
-    initialScale === "hour" ? new Date() : null,
-  );
+  const [centerTime, setCenterTime] = useState<Date>(() => new Date());
   const defaultCustomStart = useMemo(() => new Date(), []);
   const defaultCustomEnd = useMemo(
     () => new Date(defaultCustomStart.getTime() + 24 * 60 * 60 * 1000),
@@ -49,8 +57,10 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
   const [customEndInput, setCustomEndInput] = useState(toDatetimeLocal(defaultCustomEnd));
   const [customApplied, setCustomApplied] = useState<{ start: Date; end: Date } | null>(null);
   const [customError, setCustomError] = useState<string | null>(null);
+  const [liveMode, setLiveMode] = useState(false);
 
   const applyCustom = () => {
+    setLiveMode(false);
     if (!customStartInput || !customEndInput) {
       setCustomError("Both fields are required");
       return;
@@ -69,12 +79,13 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
     setCustomApplied({ start: s, end: e });
   };
 
+  const handleScaleChange = (s: TimeScale) => {
+    setLiveMode(false);
+    setScale(s);
+  };
+
   useEffect(() => {
-    if (scale === "hour") {
-      setHourEntryTime((prev) => prev ?? new Date());
-    } else {
-      setHourEntryTime(null);
-    }
+    setCenterTime(new Date());
   }, [scale]);
 
   useEffect(() => {
@@ -87,13 +98,7 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
     return () => ro.disconnect();
   }, []);
 
-  const anchor =
-    anchorDate ??
-    (scale === "hour"
-      ? hourEntryTime ?? new Date()
-      : scale === "day"
-        ? new Date()
-        : tasks[0]?.start ?? new Date());
+  const anchor = anchorDate ?? centerTime;
   const range = useMemo(() => {
     if (scale === "custom" && customApplied) {
       return getCustomRange(customApplied.start, customApplied.end);
@@ -126,70 +131,190 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
   const msPerPx = totalWidth > 0 ? rangeMs / totalWidth : 0;
   const minMs = rangeMs / range.units.length;
 
-  const updateTask = (updated: Task) =>
+  const updateTask = (updated: Task) => {
+    setLiveMode(false);
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  };
+
+  const rangeRef = useRef(range);
+  useEffect(() => {
+    rangeRef.current = range;
+  }, [range]);
+
+  useEffect(() => {
+    if (!liveMode) return;
+    const tick = () => {
+      const now = new Date();
+      const r = rangeRef.current;
+      const nowMs = now.getTime();
+      if (nowMs > r.start.getTime() && nowMs < r.end.getTime()) return;
+      if (scale === "custom") {
+        const duration = r.end.getTime() - r.start.getTime();
+        const start = new Date(nowMs - duration / 2);
+        const end = new Date(nowMs + duration / 2);
+        setCustomApplied({ start, end });
+        setCustomStartInput(toDatetimeLocal(start));
+        setCustomEndInput(toDatetimeLocal(end));
+      } else {
+        setCenterTime(now);
+      }
+    };
+    tick();
+    const interval = scale === "minute" ? 1000 : 60000;
+    const id = setInterval(tick, interval);
+    return () => clearInterval(id);
+  }, [liveMode, scale]);
+
+  useEffect(() => {
+    if (!liveMode) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setLiveMode(false);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [liveMode]);
 
   return (
-    <div className="gantt-container">
-      <div className="gantt-toolbar">
-        <ScaleSelector value={scale} onChange={setScale} />
-        <button className="gantt-add-btn" onClick={() => setShowModal(true)}>
-          + Add Task
-        </button>
-        {scale === "custom" && (
-          <div className="gantt-custom-range">
-            <label>
-              Start
-              <input
-                type="datetime-local"
-                value={customStartInput}
-                onChange={(e) => setCustomStartInput(e.target.value)}
-              />
-            </label>
-            <label>
-              End
-              <input
-                type="datetime-local"
-                value={customEndInput}
-                onChange={(e) => setCustomEndInput(e.target.value)}
-              />
-            </label>
-            <button type="button" onClick={applyCustom}>Apply</button>
-            {customError && <span className="gantt-custom-error">{customError}</span>}
-          </div>
-        )}
-      </div>
-      <div className="gantt-scroll" ref={scrollRef}>
-        <div className="gantt-inner" style={{ width: totalWidth }}>
-          <div
-            className="gantt-top-time-row"
-            style={{ width: totalWidth }}
+    <Box sx={{ fontFamily: "system-ui, sans-serif", width: "100%", boxSizing: "border-box" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1,
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+          <ScaleSelector value={scale} onChange={handleScaleChange} />
+          <Button
+            variant="outlined"
+            onClick={() => {
+              const now = new Date();
+              if (scale === "custom") {
+                const duration = range.end.getTime() - range.start.getTime();
+                const start = new Date(now.getTime() - duration / 2);
+                const end = new Date(now.getTime() + duration / 2);
+                setCustomApplied({ start, end });
+                setCustomStartInput(toDatetimeLocal(start));
+                setCustomEndInput(toDatetimeLocal(end));
+                return;
+              }
+              setCenterTime(now);
+            }}
           >
-            {timeScale.headerLabel}
-          </div>
-          <div className="gantt-body">
-            {layouts.map((layout) => (
-              <TaskRow
-                key={layout.task.id}
-                layout={layout}
-                unitCount={range.units.length}
-                config={cfg}
-                msPerPx={msPerPx}
-                minMs={minMs}
-                onEdit={() => setEditingId(layout.task.id)}
-                onChange={updateTask}
+            Now
+          </Button>
+          <Button
+            variant={liveMode ? "contained" : "outlined"}
+            color={liveMode ? "error" : "primary"}
+            startIcon={<VisibilityIcon />}
+            onClick={() => setLiveMode((v) => !v)}
+          >
+            Live
+          </Button>
+          {scale === "custom" && (
+            <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+              <TextField
+                label="Start"
+                type="datetime-local"
+                size="small"
+                value={customStartInput}
+                onChange={(e) => {
+                  setLiveMode(false);
+                  setCustomStartInput(e.target.value);
+                }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
-            ))}
-          </div>
-          <CurrentTimeLine range={range} totalWidth={totalWidth} />
-          <TimelineFooter
-            ticks={timeScale.ticks}
-            totalWidth={totalWidth}
-            rangeStart={range.start}
-            rangeEnd={range.end}
-          />
-        </div>
-      </div>
+              <TextField
+                label="End"
+                type="datetime-local"
+                size="small"
+                value={customEndInput}
+                onChange={(e) => {
+                  setLiveMode(false);
+                  setCustomEndInput(e.target.value);
+                }}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <Button variant="outlined" onClick={applyCustom}>
+                Apply
+              </Button>
+              {customError && (
+                <Alert severity="error" sx={{ py: 0 }}>
+                  {customError}
+                </Alert>
+              )}
+            </Box>
+          )}
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setShowModal(true)}
+        >
+          Add Task
+        </Button>
+      </Box>
+
+      <Paper
+        variant="outlined"
+        sx={{ width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}
+      >
+        <Box
+          sx={{
+            px: 2,
+            py: 1,
+            fontWeight: 600,
+            bgcolor: "grey.50",
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            {timeScale.headerLabel}
+          </Typography>
+        </Box>
+
+        <Box
+          ref={scrollRef}
+          sx={{
+            width: "100%",
+            maxWidth: "100%",
+            overflowX: "auto",
+            overflowY: "hidden",
+            boxSizing: "border-box",
+            scrollbarGutter: "stable",
+          }}
+        >
+          <Box sx={{ position: "relative", width: totalWidth }}>
+            <Box sx={{ position: "relative" }}>
+              {layouts.map((layout) => (
+                <TaskRow
+                  key={layout.task.id}
+                  layout={layout}
+                  unitCount={range.units.length}
+                  config={cfg}
+                  msPerPx={msPerPx}
+                  minMs={minMs}
+                  onEdit={() => setEditingId(layout.task.id)}
+                  onChange={updateTask}
+                />
+              ))}
+            </Box>
+            <CurrentTimeLine range={range} totalWidth={totalWidth} />
+            <TimelineFooter
+              ticks={timeScale.ticks}
+              totalWidth={totalWidth}
+              rangeStart={range.start}
+              rangeEnd={range.end}
+            />
+          </Box>
+        </Box>
+      </Paper>
+
       {showModal && (
         <AddTaskModal
           onClose={() => setShowModal(false)}
@@ -205,6 +330,6 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
           }
         />
       )}
-    </div>
+    </Box>
   );
 }

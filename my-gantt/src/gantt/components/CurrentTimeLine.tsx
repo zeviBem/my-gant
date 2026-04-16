@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Box, Tooltip } from "@mui/material";
 import type { TimelineRange } from "../types";
 
 interface Props {
@@ -6,21 +7,24 @@ interface Props {
   totalWidth: number;
 }
 
+const ONE_SECOND = 1_000;
 const ONE_MINUTE = 60_000;
 
-function formatTimestamp(d: Date): string {
+function formatTimestamp(d: Date, withSeconds: boolean): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const base = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return withSeconds ? `${base}:${pad(d.getSeconds())}` : base;
 }
 
 export function CurrentTimeLine({ range, totalWidth }: Props) {
   const [now, setNow] = useState(() => new Date());
-  const [hovered, setHovered] = useState(false);
+  const isMinute = range.scale === "minute";
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), ONE_MINUTE);
+    const interval = isMinute ? ONE_SECOND : ONE_MINUTE;
+    const id = setInterval(() => setNow(new Date()), interval);
     return () => clearInterval(id);
-  }, []);
+  }, [isMinute]);
 
   const current = now.getTime();
   const startMs = range.start.getTime();
@@ -30,15 +34,19 @@ export function CurrentTimeLine({ range, totalWidth }: Props) {
   const x = ((current - startMs) / (endMs - startMs)) * totalWidth;
 
   return (
-    <div
-      className="gantt-now-line"
-      style={{ left: x }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {hovered && (
-        <div className="gantt-now-tooltip">{formatTimestamp(now)}</div>
-      )}
-    </div>
+    <Tooltip title={formatTimestamp(now, isMinute)} arrow placement="top">
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: x,
+          width: "2px",
+          bgcolor: "error.main",
+          zIndex: 5,
+          cursor: "pointer",
+        }}
+      />
+    </Tooltip>
   );
 }

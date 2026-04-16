@@ -1,4 +1,14 @@
 import { useState } from "react";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Box,
+  TextField,
+} from "@mui/material";
 import type { Task } from "../types";
 
 interface Props {
@@ -34,27 +44,42 @@ export function AddTaskModal({ onClose, onSave, initial }: Props) {
   };
 
   return (
-    <div className="gantt-modal-overlay" onClick={onClose}>
-      <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{initial ? "Edit Task" : "Add Task"}</h3>
-        <label>
-          Title
-          <input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </label>
-        <label>
-          Start
-          <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
-        </label>
-        <label>
-          End
-          <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
-        </label>
-        {error && <div className="gantt-modal-error">{error}</div>}
-        <div className="gantt-modal-actions">
-          <button onClick={onClose}>Cancel</button>
-          <button onClick={handleSave}>Save</button>
-        </div>
-      </div>
-    </div>
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>{initial ? "Edit Task" : "Add Task"}</DialogTitle>
+      <DialogContent>
+        <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            size="small"
+            autoFocus
+          />
+          <TextField
+            label="Start"
+            type="datetime-local"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            size="small"
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            label="End"
+            type="datetime-local"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            size="small"
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          {error && <Alert severity="error">{error}</Alert>}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

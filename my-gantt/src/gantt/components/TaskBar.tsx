@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Box, Tooltip, Typography } from "@mui/material";
 import type { Task, TaskLayout } from "../types";
 
 type DragMode = "move" | "resize-l" | "resize-r";
@@ -23,8 +24,6 @@ export function TaskBar({
   onDoubleClick,
   onChange,
 }: Props) {
-  const [hover, setHover] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
   const [active, setActive] = useState(false);
   const draggingRef = useRef(false);
   const { task } = layout;
@@ -63,37 +62,88 @@ export function TaskBar({
     window.addEventListener("mouseup", onUp);
   };
 
+  const tooltipContent = (
+    <Box>
+      <Typography variant="caption" sx={{ fontWeight: 600, display: "block" }}>
+        {task.title}
+      </Typography>
+      <Typography variant="caption" sx={{ display: "block" }}>
+        Start: {fmt(task.start)}
+      </Typography>
+      <Typography variant="caption" sx={{ display: "block" }}>
+        End: {fmt(task.end)}
+      </Typography>
+    </Box>
+  );
+
   return (
-    <>
-      <div
-        className={`gantt-bar${active ? " gantt-bar-active" : ""}`}
-        style={{ left: layout.offsetPx, width: layout.widthPx }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
+    <Tooltip title={active ? "" : tooltipContent} arrow followCursor>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "6px",
+          bottom: "6px",
+          left: layout.offsetPx,
+          width: layout.widthPx,
+          bgcolor: "primary.main",
+          borderRadius: 1,
+          color: "#fff",
+          px: 1,
+          display: "flex",
+          alignItems: "center",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          cursor: "move",
+          userSelect: "none",
+          boxShadow: active
+            ? "0 0 0 2px #2563eb, 0 2px 6px rgba(0,0,0,0.25)"
+            : "0 1px 2px rgba(0,0,0,0.1)",
+          opacity: active ? 0.92 : 1,
+        }}
         onMouseDown={(e) => startDrag(e, "move")}
         onDoubleClick={onDoubleClick}
       >
-        <div
-          className="gantt-bar-handle gantt-bar-handle-l"
+        <Box
           onMouseDown={(e) => startDrag(e, "resize-l")}
+          sx={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: "6px",
+            cursor: "ew-resize",
+            bgcolor: "rgba(0,0,0,0.15)",
+            borderRadius: "3px 0 0 3px",
+          }}
         />
-        <span className="gantt-bar-label">{task.title}</span>
-        <div
-          className="gantt-bar-handle gantt-bar-handle-r"
-          onMouseDown={(e) => startDrag(e, "resize-r")}
-        />
-      </div>
-      {hover && !active && (
-        <div
-          className="gantt-tooltip"
-          style={{ left: pos.x + 12, top: pos.y + 12 }}
+        <Typography
+          variant="body2"
+          sx={{
+            flex: 1,
+            px: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            color: "#fff",
+          }}
         >
-          <div className="gantt-tooltip-title">{task.title}</div>
-          <div>Start: {fmt(task.start)}</div>
-          <div>End: {fmt(task.end)}</div>
-        </div>
-      )}
-    </>
+          {task.title}
+        </Typography>
+        <Box
+          onMouseDown={(e) => startDrag(e, "resize-r")}
+          sx={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: "6px",
+            cursor: "ew-resize",
+            bgcolor: "rgba(0,0,0,0.15)",
+            borderRadius: "0 3px 3px 0",
+          }}
+        />
+      </Box>
+    </Tooltip>
   );
 }

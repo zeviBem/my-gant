@@ -16,10 +16,6 @@ export interface TimeScaleConfig {
   visibleEnd: Date;
 }
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 const MONTH_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -28,12 +24,23 @@ const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const hms = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 const dmy = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 const dmyHm = (d: Date) => `${dmy(d)} ${hm(d)}`;
 
-const MINUTE = 60_000;
+const SECOND = 1_000;
+const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+
+function buildMinute(start: Date, end: Date): TimeScaleResult {
+  const ticks: TimeScaleTick[] = [];
+  for (let t = start.getTime(); t <= end.getTime(); t += 5 * SECOND) {
+    const d = new Date(t);
+    ticks.push({ time: d, label: hms(d) });
+  }
+  return { headerLabel: `${hms(start)} – ${hms(end)}`, ticks };
+}
 
 function buildHour(start: Date, end: Date): TimeScaleResult {
   const ticks: TimeScaleTick[] = [];
@@ -44,46 +51,59 @@ function buildHour(start: Date, end: Date): TimeScaleResult {
   return { headerLabel: `${hm(start)} – ${hm(end)}`, ticks };
 }
 
-function buildDay(start: Date, _end: Date): TimeScaleResult {
+function buildDay(start: Date, end: Date): TimeScaleResult {
   const ticks: TimeScaleTick[] = [];
-  const base = new Date(start);
-  base.setMinutes(0, 0, 0);
-  for (let h = 0; h < 24; h++) {
-    const d = new Date(base);
-    d.setHours(h);
-    ticks.push({ time: d, label: `${pad(h)}:00` });
+  const first = new Date(start);
+  first.setMinutes(0, 0, 0);
+  if (first.getTime() < start.getTime()) {
+    first.setTime(first.getTime() + HOUR);
   }
-  return { headerLabel: dmy(start), ticks };
+  for (let t = first.getTime(); t <= end.getTime(); t += HOUR) {
+    const d = new Date(t);
+    ticks.push({ time: d, label: `${pad(d.getHours())}:00` });
+  }
+  return { headerLabel: `${dmyHm(start)} – ${dmyHm(end)}`, ticks };
 }
 
 function buildWeek(start: Date, end: Date): TimeScaleResult {
   const ticks: TimeScaleTick[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start.getTime() + i * DAY);
+  const first = new Date(start);
+  first.setHours(0, 0, 0, 0);
+  if (first.getTime() < start.getTime()) {
+    first.setDate(first.getDate() + 1);
+  }
+  for (let t = first.getTime(); t <= end.getTime(); t += DAY) {
+    const d = new Date(t);
     ticks.push({ time: d, label: `${DAY_SHORT[d.getDay()]} ${pad(d.getDate())}` });
   }
-  const last = new Date(end.getTime() - DAY);
-  return { headerLabel: `${dmy(start)} – ${dmy(last)}`, ticks };
+  return { headerLabel: `${dmy(start)} – ${dmy(end)}`, ticks };
 }
 
-function buildMonth(start: Date, _end: Date): TimeScaleResult {
+function buildMonth(start: Date, end: Date): TimeScaleResult {
+  const rangeMs = end.getTime() - start.getTime();
+  const segment = rangeMs / 4;
   const ticks: TimeScaleTick[] = Array.from({ length: 4 }, (_, i) => ({
-    time: new Date(start.getTime() + i * 7 * DAY),
+    time: new Date(start.getTime() + i * segment + segment / 2),
     label: `Week ${i + 1}`,
   }));
-  return {
-    headerLabel: `${MONTH_NAMES[start.getMonth()]} – ${start.getFullYear()}`,
-    ticks,
-  };
+  return { headerLabel: `${dmy(start)} – ${dmy(end)}`, ticks };
 }
 
-function buildYear(start: Date, _end: Date): TimeScaleResult {
-  const year = start.getFullYear();
-  const ticks: TimeScaleTick[] = Array.from({ length: 12 }, (_, m) => ({
-    time: new Date(year, m, 1),
-    label: MONTH_SHORT[m],
-  }));
-  return { headerLabel: String(year), ticks };
+function buildYear(start: Date, end: Date): TimeScaleResult {
+  const ticks: TimeScaleTick[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  if (cursor.getTime() < start.getTime()) {
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  const endTime = end.getTime();
+  while (cursor.getTime() <= endTime) {
+    ticks.push({ time: new Date(cursor), label: MONTH_SHORT[cursor.getMonth()] });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return {
+    headerLabel: `${MONTH_SHORT[start.getMonth()]} ${start.getFullYear()} – ${MONTH_SHORT[end.getMonth()]} ${end.getFullYear()}`,
+    ticks,
+  };
 }
 
 function buildCustom(start: Date, end: Date): TimeScaleResult {
@@ -91,7 +111,10 @@ function buildCustom(start: Date, end: Date): TimeScaleResult {
   let step: number;
   let format: (d: Date) => string;
 
-  if (duration < 3 * HOUR) {
+  if (duration < 10 * MINUTE) {
+    step = MINUTE;
+    format = hm;
+  } else if (duration < 2 * HOUR) {
     step = 5 * MINUTE;
     format = hm;
   } else if (duration < DAY) {
@@ -100,12 +123,9 @@ function buildCustom(start: Date, end: Date): TimeScaleResult {
   } else if (duration < 7 * DAY) {
     step = DAY;
     format = (d) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-  } else if (duration < 30 * DAY) {
+  } else {
     step = 7 * DAY;
     format = (d) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-  } else {
-    step = 30 * DAY;
-    format = (d) => `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
   }
 
   const ticks: TimeScaleTick[] = [];
@@ -120,6 +140,7 @@ function buildCustom(start: Date, end: Date): TimeScaleResult {
 export function getTimeScale(config: TimeScaleConfig): TimeScaleResult {
   const { zoom, visibleStart, visibleEnd } = config;
   switch (zoom) {
+    case "minute": return buildMinute(visibleStart, visibleEnd);
     case "hour": return buildHour(visibleStart, visibleEnd);
     case "day": return buildDay(visibleStart, visibleEnd);
     case "week": return buildWeek(visibleStart, visibleEnd);

@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import type { GanttConfig, Task, TaskLayout } from "../types";
 import { TaskBar } from "./TaskBar";
 
@@ -13,15 +14,28 @@ interface Props {
 
 export function TaskRow({ layout, unitCount, config, msPerPx, minMs, onEdit, onChange }: Props) {
   return (
-    <div
-      className="gantt-row"
-      style={{ height: config.rowHeight, width: unitCount * config.unitWidth }}
+    <Box
+      sx={{
+        position: "relative",
+        borderBottom: 1,
+        borderColor: "grey.100",
+        overflow: "hidden",
+        height: config.rowHeight,
+        width: unitCount * config.unitWidth,
+      }}
     >
       {Array.from({ length: unitCount }, (_, i) => (
-        <div
+        <Box
           key={i}
-          className="gantt-grid-cell"
-          style={{ left: i * config.unitWidth, width: config.unitWidth }}
+          sx={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: i * config.unitWidth,
+            width: config.unitWidth,
+            borderRight: "1px solid",
+            borderColor: "grey.100",
+          }}
         />
       ))}
       {layout.widthPx > 0 && (
@@ -33,6 +47,6 @@ export function TaskRow({ layout, unitCount, config, msPerPx, minMs, onEdit, onC
           onChange={onChange}
         />
       )}
-    </div>
+    </Box>
   );
 }
