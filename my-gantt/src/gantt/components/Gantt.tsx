@@ -1,14 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  TextField,
-  Typography,
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import type { GanttConfig, Task, TimeScale } from "../types";
 import { getCustomRange, getTimeScaleRange, layoutTasks } from "../engine";
 import { TaskRow } from "./TaskRow";
@@ -17,6 +7,7 @@ import { CurrentTimeLine } from "./CurrentTimeLine";
 import { AddTaskModal } from "./AddTaskModal";
 import { TimelineFooter } from "./TimelineFooter";
 import { getTimeScale } from "../engine/timeScaleEngine";
+import "../Gantt.css";
 
 interface Props {
   tasks: Task[];
@@ -175,22 +166,13 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
   }, [liveMode]);
 
   return (
-    <Box sx={{ fontFamily: "system-ui, sans-serif", width: "100%", boxSizing: "border-box" }}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 1,
-          flexWrap: "wrap",
-          gap: 1,
-        }}
-      >
-        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+    <div className="gantt-container">
+      <div className="gantt-toolbar">
+        <div className="gantt-toolbar-group">
           <ScaleSelector value={scale} onChange={handleScaleChange} />
-          <Button
-            variant="outlined"
+          <button
+            type="button"
+            className="gantt-btn"
             onClick={() => {
               const now = new Date();
               if (scale === "custom") {
@@ -206,91 +188,65 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
             }}
           >
             Now
-          </Button>
-          <Button
-            variant={liveMode ? "contained" : "outlined"}
-            color={liveMode ? "error" : "primary"}
-            startIcon={<VisibilityIcon />}
+          </button>
+          <button
+            type="button"
+            className={`gantt-btn${liveMode ? " gantt-btn-live-on" : ""}`}
+            aria-pressed={liveMode}
             onClick={() => setLiveMode((v) => !v)}
           >
+            <span aria-hidden="true">👁</span>
             Live
-          </Button>
+          </button>
           {scale === "custom" && (
-            <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-              <TextField
-                label="Start"
-                type="datetime-local"
-                size="small"
-                value={customStartInput}
-                onChange={(e) => {
-                  setLiveMode(false);
-                  setCustomStartInput(e.target.value);
-                }}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="End"
-                type="datetime-local"
-                size="small"
-                value={customEndInput}
-                onChange={(e) => {
-                  setLiveMode(false);
-                  setCustomEndInput(e.target.value);
-                }}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <Button variant="outlined" onClick={applyCustom}>
+            <div className="gantt-toolbar-group">
+              <label className="gantt-field">
+                <span className="gantt-field-label">Start</span>
+                <input
+                  className="gantt-input"
+                  type="datetime-local"
+                  value={customStartInput}
+                  onChange={(e) => {
+                    setLiveMode(false);
+                    setCustomStartInput(e.target.value);
+                  }}
+                />
+              </label>
+              <label className="gantt-field">
+                <span className="gantt-field-label">End</span>
+                <input
+                  className="gantt-input"
+                  type="datetime-local"
+                  value={customEndInput}
+                  onChange={(e) => {
+                    setLiveMode(false);
+                    setCustomEndInput(e.target.value);
+                  }}
+                />
+              </label>
+              <button type="button" className="gantt-btn" onClick={applyCustom}>
                 Apply
-              </Button>
-              {customError && (
-                <Alert severity="error" sx={{ py: 0 }}>
-                  {customError}
-                </Alert>
-              )}
-            </Box>
+              </button>
+              {customError && <div className="gantt-alert-error">{customError}</div>}
+            </div>
           )}
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+        </div>
+        <button
+          type="button"
+          className="gantt-btn gantt-btn-primary"
           onClick={() => setShowModal(true)}
         >
+          <span aria-hidden="true">+</span>
           Add Task
-        </Button>
-      </Box>
+        </button>
+      </div>
 
-      <Paper
-        variant="outlined"
-        sx={{ width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}
-      >
-        <Box
-          sx={{
-            px: 2,
-            py: 1,
-            fontWeight: 600,
-            bgcolor: "grey.50",
-            borderBottom: 1,
-            borderColor: "divider",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            {timeScale.headerLabel}
-          </Typography>
-        </Box>
+      <div className="gantt-paper">
+        <div className="gantt-top-time-row">{timeScale.headerLabel}</div>
 
-        <Box
-          ref={scrollRef}
-          sx={{
-            width: "100%",
-            maxWidth: "100%",
-            overflowX: "auto",
-            overflowY: "hidden",
-            boxSizing: "border-box",
-            scrollbarGutter: "stable",
-          }}
-        >
-          <Box sx={{ position: "relative", width: totalWidth }}>
-            <Box sx={{ position: "relative" }}>
+        <div className="gantt-scroll" ref={scrollRef}>
+          <div className="gantt-inner" style={{ width: totalWidth }}>
+            <div className="gantt-body">
               {layouts.map((layout) => (
                 <TaskRow
                   key={layout.task.id}
@@ -303,7 +259,7 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
                   onChange={updateTask}
                 />
               ))}
-            </Box>
+            </div>
             <CurrentTimeLine range={range} totalWidth={totalWidth} />
             <TimelineFooter
               ticks={timeScale.ticks}
@@ -311,9 +267,9 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
               rangeStart={range.start}
               rangeEnd={range.end}
             />
-          </Box>
-        </Box>
-      </Paper>
+          </div>
+        </div>
+      </div>
 
       {showModal && (
         <AddTaskModal
@@ -330,6 +286,6 @@ export function Gantt({ tasks: initialTasks, anchorDate, initialScale = "week", 
           }
         />
       )}
-    </Box>
+    </div>
   );
 }

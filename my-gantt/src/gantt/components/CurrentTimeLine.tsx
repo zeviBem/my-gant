@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Box, Tooltip } from "@mui/material";
 import type { TimelineRange } from "../types";
 
 interface Props {
@@ -34,19 +33,10 @@ export function CurrentTimeLine({ range, totalWidth }: Props) {
   const x = ((current - startMs) / (endMs - startMs)) * totalWidth;
 
   return (
-    <Tooltip title={formatTimestamp(now, isMinute)} arrow placement="top">
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: x,
-          width: "2px",
-          bgcolor: "error.main",
-          zIndex: 5,
-          cursor: "pointer",
-        }}
-      />
-    </Tooltip>
+    <div
+      className="gantt-now-line"
+      style={{ left: x }}
+      title={formatTimestamp(now, isMinute)}
+    />
   );
 }

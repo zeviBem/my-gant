@@ -1,4 +1,3 @@
-import { Box, Typography } from "@mui/material";
 import type { TimeScaleTick } from "../engine/timeScaleEngine";
 
 interface Props {
@@ -13,39 +12,20 @@ export function TimelineFooter({ ticks, totalWidth, rangeStart, rangeEnd }: Prop
   if (rangeMs <= 0) return null;
 
   return (
-    <Box
-      sx={{
-        width: totalWidth,
-        height: 28,
-        position: "relative",
-        bgcolor: "grey.50",
-        borderTop: 1,
-        borderColor: "divider",
-        mb: 2,
-      }}
-    >
+    <div className="gantt-footer" style={{ width: totalWidth }}>
       {ticks.map((t, i) => {
         const x = ((t.time.getTime() - rangeStart.getTime()) / rangeMs) * totalWidth;
         const atEnd = totalWidth - x < 40;
         return (
-          <Typography
+          <span
             key={i}
-            variant="caption"
-            sx={{
-              position: "absolute",
-              left: x,
-              top: "6px",
-              px: "4px",
-              transform: atEnd ? "translateX(-100%)" : "none",
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-              color: "text.secondary",
-            }}
+            className={`gantt-footer-tick${atEnd ? " gantt-footer-tick-end" : ""}`}
+            style={{ left: x }}
           >
             {t.label}
-          </Typography>
+          </span>
         );
       })}
-    </Box>
+    </div>
   );
 }

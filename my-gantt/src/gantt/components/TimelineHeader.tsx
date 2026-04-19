@@ -1,4 +1,3 @@
-import { Box } from "@mui/material";
 import type { GanttConfig, TimelineUnit } from "../types";
 
 interface Props {
@@ -8,33 +7,16 @@ interface Props {
 
 export function TimelineHeader({ units, config }: Props) {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        borderBottom: 1,
-        borderColor: "divider",
-        bgcolor: "grey.100",
-        width: units.length * config.unitWidth,
-      }}
-    >
+    <div className="gantt-header" style={{ width: units.length * config.unitWidth }}>
       {units.map((u, i) => (
-        <Box
+        <div
           key={i}
-          sx={{
-            width: config.unitWidth,
-            minWidth: config.unitWidth,
-            boxSizing: "border-box",
-            borderRight: 1,
-            borderColor: "grey.200",
-            textAlign: "center",
-            py: "6px",
-            fontWeight: 500,
-            fontSize: 13,
-          }}
+          className="gantt-header-cell"
+          style={{ width: config.unitWidth, minWidth: config.unitWidth }}
         >
           {u.label}
-        </Box>
+        </div>
       ))}
-    </Box>
+    </div>
   );
 }
