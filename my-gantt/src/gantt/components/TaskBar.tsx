@@ -7,19 +7,40 @@ interface Props {
   layout: TaskLayout;
   msPerPx: number;
   minMs: number;
+  top?: number;
+  height?: number;
   onDoubleClick?: () => void;
   onChange?: (task: Task) => void;
 }
 
+const STRIPE_COLORS = ["#4ADE80", "#FACC15", "#F87171", "#3FA9FF"];
+
+function stripeColorFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return STRIPE_COLORS[hash % STRIPE_COLORS.length];
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
 function fmt(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fmtShort(d: Date): string {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function TaskBar({
   layout,
   msPerPx,
   minMs,
+  top,
+  height,
   onDoubleClick,
   onChange,
 }: Props) {
@@ -62,11 +83,18 @@ export function TaskBar({
   };
 
   const tooltip = `${task.title}\nStart: ${fmt(task.start)}\nEnd: ${fmt(task.end)}`;
+  const stripe = stripeColorFor(task.id);
 
   return (
     <div
-      className={`gantt-bar${active ? " gantt-bar-active" : ""}`}
-      style={{ left: layout.offsetPx, width: layout.widthPx }}
+      className={`gantt-bar scheduler-task-card${active ? " gantt-bar-active" : ""}`}
+      style={{
+        left: layout.offsetPx,
+        width: layout.widthPx,
+        top: top ?? undefined,
+        height: height ?? undefined,
+        bottom: top !== undefined ? "auto" : undefined,
+      }}
       title={active ? "" : tooltip}
       onMouseDown={(e) => startDrag(e, "move")}
       onDoubleClick={onDoubleClick}
@@ -75,7 +103,13 @@ export function TaskBar({
         className="gantt-bar-handle gantt-bar-handle-l"
         onMouseDown={(e) => startDrag(e, "resize-l")}
       />
-      <span className="gantt-bar-label">{task.title}</span>
+      <div className="scheduler-task-content">
+        <div className="scheduler-task-title">{task.title}</div>
+        <div className="scheduler-task-time">
+          {fmtShort(task.start)} – {fmtShort(task.end)}
+        </div>
+      </div>
+      <span className="scheduler-task-stripe" style={{ background: stripe }} aria-hidden="true" />
       <div
         className="gantt-bar-handle gantt-bar-handle-r"
         onMouseDown={(e) => startDrag(e, "resize-r")}

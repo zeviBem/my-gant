@@ -1,10 +1,17 @@
 export type TimeScale = "minute" | "hour" | "day" | "week" | "month" | "year" | "custom";
 
+export interface Category {
+  id: string;
+  name: string;
+  color?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
   start: Date;
   end: Date;
+  categoryId?: string;
 }
 
 export interface GanttConfig {

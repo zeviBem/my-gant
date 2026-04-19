@@ -14,16 +14,9 @@ interface Props {
 export function TaskRow({ layout, unitCount, config, msPerPx, minMs, onEdit, onChange }: Props) {
   return (
     <div
-      className="gantt-row"
+      className="gantt-row scheduler-task-row"
       style={{ height: config.rowHeight, width: unitCount * config.unitWidth }}
     >
-      {Array.from({ length: unitCount }, (_, i) => (
-        <div
-          key={i}
-          className="gantt-grid-cell"
-          style={{ left: i * config.unitWidth, width: config.unitWidth }}
-        />
-      ))}
       {layout.widthPx > 0 && (
         <TaskBar
           layout={layout}
