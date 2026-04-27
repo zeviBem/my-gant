@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TimeScale, TimelineRange } from "../types/timeline.types";
+import { alignTimeToScale } from "../helpers/align.helpers";
 import {
   buildCustomRange,
   buildHeaderLabel,
@@ -31,14 +32,19 @@ export function useTimelineEngine(
   useEffect(() => {
     setCenterTime(new Date());
   }, [scale]);
-
-  const anchor = anchorDate ?? centerTime;
+  // const anchor = anchorDate ?? centerTime;
+  const alignedAnchor = useMemo(
+    () => alignTimeToScale(scale, anchorDate ?? centerTime),
+    [scale, anchorDate, centerTime],
+  );
   const range = useMemo(() => {
     if (scale === "custom" && customApplied) {
       return buildCustomRange(customApplied.start, customApplied.end);
     }
-    return buildRange(scale, anchor);
-  }, [scale, anchor, customApplied]);
+    //   return buildRange(scale, anchor);
+    // }, [scale, anchor, customApplied]);
+    return buildRange(scale, alignedAnchor);
+  }, [scale, alignedAnchor, customApplied]);
 
   const headerLabel = useMemo(
     () => buildHeaderLabel(scale, range.start, range.end),

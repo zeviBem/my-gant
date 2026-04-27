@@ -88,11 +88,15 @@ export function buildRange(scale: TimeScale, anchor: Date): TimelineRange {
     };
   }
   if (scale === "week") {
-    const start = new Date(at - 3 * DAY);
+    const aligned = new Date(anchor);
+    aligned.setHours(0, 0, 0, 0);
+    // const start = new Date(at - 3 * DAY);
+    const start = new Date(aligned.getTime() - 3 * DAY);
     return {
       scale,
       start,
-      end: new Date(at + 3 * DAY),
+      // end: new Date(at + 3 * DAY),
+      end: new Date(start.getTime() + 7 * DAY),
       units: uniformUnits(
         start,
         DAY,
