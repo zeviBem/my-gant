@@ -9,20 +9,28 @@ export const MIN = 60 * SEC;
 export const HOUR = 60 * MIN;
 export const DAY = 24 * HOUR;
 
-export const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const DAY_NAMES = [
+  "ראשון",
+  "שני",
+  "שלישי",
+  "רביעי",
+  "חמישי",
+  "שישי",
+  "שבת",
+];
 export const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "ינואר",
+  "פברואר",
+  "מרץ",
+  "אפריל",
+  "מאי",
+  "יוני",
+  "יולי",
+  "אוגוסט",
+  "ספטמבר",
+  "אוקטובר",
+  "נובמבר",
+  "דצמבר",
 ];
 
 export const pad = (n: number) => String(n).padStart(2, "0");
@@ -80,11 +88,11 @@ export function buildRange(scale: TimeScale, anchor: Date): TimelineRange {
     };
   }
   if (scale === "week") {
-    const start = new Date(at - 3.5 * DAY);
+    const start = new Date(at - 3 * DAY);
     return {
       scale,
       start,
-      end: new Date(at + 3.5 * DAY),
+      end: new Date(at + 3 * DAY),
       units: uniformUnits(
         start,
         DAY,
