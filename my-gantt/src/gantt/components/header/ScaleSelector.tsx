@@ -1,4 +1,4 @@
-import type { TimeScale } from "../types";
+import type { TimeScale } from "../../types/timeline.types";
 
 const OPTIONS: TimeScale[] = ["minute", "hour", "day", "week", "month", "year", "custom"];
 

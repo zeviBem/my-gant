@@ -3,14 +3,14 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
   height: 100%;
   min-height: 0;
 }
 
 .gantt-toolbar {
-  flex: none;
+  flex-shrink: 0;
 }
 
 .gantt-toolbar {
@@ -351,10 +351,10 @@
   border: 1px solid #2F323A;
   border-radius: 10px;
   color: #E5E7EB;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -367,29 +367,29 @@
   text-transform: uppercase;
   padding: 10px 16px;
   font-weight: 500;
-  flex: none;
 }
 
 .scheduler-outer {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 44px;
   min-height: 0;
   min-width: 0;
+  height: 100%;
 }
 
 .scheduler-scroll {
-  flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
   background: #1E1F24;
+  height: 100%;
 }
 
 .scheduler-inner {
   background: #1E1F24;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
   height: 100%;
   min-height: 0;
 }
@@ -399,7 +399,6 @@
   background: #1A1B20;
   border-bottom: 1px solid #2F323A;
   height: 52px;
-  flex: none;
 }
 
 .scheduler-timeline-header-cell {
@@ -439,8 +438,8 @@
 .scheduler-body {
   position: relative;
   background: #1E1F24;
-  flex: 1;
   min-height: 0;
+  height: 100%;
   display: grid;
 }
 
@@ -595,23 +594,20 @@
 
 /* Right-side vertical category label column */
 .scheduler-labels {
-  flex: 0 0 44px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 52px 1fr;
   background: #1A1B20;
   border-left: 1px solid #2F323A;
   min-height: 0;
+  height: 100%;
 }
 
 .scheduler-labels-top-spacer {
-  height: 52px;
-  flex: none;
   border-bottom: 1px solid #2F323A;
   background: #1A1B20;
 }
 
 .scheduler-labels-body {
-  flex: 1;
   display: grid;
   min-height: 0;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { TimelineRange } from "../types";
+import type { TimelineRange } from "../../types/timeline.types";
+import { hm, pad } from "../../helpers/time.helpers";
 
 interface Props {
   range: TimelineRange;
@@ -10,12 +11,11 @@ const ONE_SECOND = 1_000;
 const ONE_MINUTE = 60_000;
 
 function formatTimestamp(d: Date, withSeconds: boolean): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const base = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const base = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm(d)}`;
   return withSeconds ? `${base}:${pad(d.getSeconds())}` : base;
 }
 
-export function CurrentTimeLine({ range, totalWidth }: Props) {
+export function CurrentTimeNeedle({ range, totalWidth }: Props) {
   const [now, setNow] = useState(() => new Date());
   const isMinute = range.scale === "minute";
 
@@ -31,7 +31,6 @@ export function CurrentTimeLine({ range, totalWidth }: Props) {
   if (current < startMs || current > endMs) return null;
 
   const x = ((current - startMs) / (endMs - startMs)) * totalWidth;
-
   return (
     <div
       className="gantt-now-line"

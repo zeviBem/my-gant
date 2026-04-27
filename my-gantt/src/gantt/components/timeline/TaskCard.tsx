@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
-import type { Task, TaskLayout } from "../types";
+import type { Task } from "../../models/Task";
+import type { TaskLayout } from "../../types/timeline.types";
+import {
+  formatTaskLong,
+  formatTaskShort,
+  stripeColorFor,
+} from "../../helpers/task.helpers";
 
 type DragMode = "move" | "resize-l" | "resize-r";
 
@@ -13,29 +19,7 @@ interface Props {
   onChange?: (task: Task) => void;
 }
 
-const STRIPE_COLORS = ["#4ADE80", "#FACC15", "#F87171", "#3FA9FF"];
-
-function stripeColorFor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return STRIPE_COLORS[hash % STRIPE_COLORS.length];
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function fmt(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function fmtShort(d: Date): string {
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-export function TaskBar({
+export function TaskCard({
   layout,
   msPerPx,
   minMs,
@@ -62,14 +46,9 @@ export function TaskBar({
       const dxMs = (ev.clientX - startX) * msPerPx;
       let s = origStart;
       let en = origEnd;
-      if (mode === "move") {
-        s = origStart + dxMs;
-        en = origEnd + dxMs;
-      } else if (mode === "resize-l") {
-        s = Math.min(origStart + dxMs, origEnd - minMs);
-      } else {
-        en = Math.max(origEnd + dxMs, origStart + minMs);
-      }
+      if (mode === "move") { s = origStart + dxMs; en = origEnd + dxMs; }
+      else if (mode === "resize-l") s = Math.min(origStart + dxMs, origEnd - minMs);
+      else en = Math.max(origEnd + dxMs, origStart + minMs);
       onChange({ ...task, start: new Date(s), end: new Date(en) });
     };
     const onUp = () => {
@@ -82,7 +61,7 @@ export function TaskBar({
     window.addEventListener("mouseup", onUp);
   };
 
-  const tooltip = `${task.title}\nStart: ${fmt(task.start)}\nEnd: ${fmt(task.end)}`;
+  const tooltip = `${task.title}\nStart: ${formatTaskLong(task.start)}\nEnd: ${formatTaskLong(task.end)}`;
   const stripe = stripeColorFor(task.id);
 
   return (
@@ -106,7 +85,7 @@ export function TaskBar({
       <div className="scheduler-task-content">
         <div className="scheduler-task-title">{task.title}</div>
         <div className="scheduler-task-time">
-          {fmtShort(task.start)} – {fmtShort(task.end)}
+          {formatTaskShort(task.start)} – {formatTaskShort(task.end)}
         </div>
       </div>
       <span className="scheduler-task-stripe" style={{ background: stripe }} aria-hidden="true" />

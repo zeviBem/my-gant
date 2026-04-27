@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Task } from "../types";
+import type { Task } from "../models/Task";
+import { toDatetimeLocal } from "../helpers/time.helpers";
 
 interface Props {
   onClose: () => void;
@@ -7,15 +8,10 @@ interface Props {
   initial?: Task;
 }
 
-function toLocalInput(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function AddTaskModal({ onClose, onSave, initial }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [start, setStart] = useState(initial ? toLocalInput(initial.start) : "");
-  const [end, setEnd] = useState(initial ? toLocalInput(initial.end) : "");
+  const [start, setStart] = useState(initial ? toDatetimeLocal(initial.start) : "");
+  const [end, setEnd] = useState(initial ? toDatetimeLocal(initial.end) : "");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -37,6 +33,7 @@ export function AddTaskModal({ onClose, onSave, initial }: Props) {
       title: title.trim(),
       start: s,
       end: e,
+      categoryId: initial?.categoryId,
     });
     onClose();
   };
