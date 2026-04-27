@@ -30,11 +30,13 @@ export function CurrentTimeNeedle({ range, totalWidth }: Props) {
   const endMs = range.end.getTime();
   if (current < startMs || current > endMs) return null;
 
-  const x = ((current - startMs) / (endMs - startMs)) * totalWidth;
+  const percent = (current - startMs) / (endMs - startMs);
+  const x = percent * totalWidth;
+
   return (
     <div
       className="gantt-now-line"
-      style={{ left: x }}
+      style={{ right: x }}
       title={formatTimestamp(now, isMinute)}
     />
   );

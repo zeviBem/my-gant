@@ -35,7 +35,7 @@ export function CategoryLane({
           <div
             key={i}
             className="scheduler-grid-col"
-            style={{ left: i * unitWidth, width: unitWidth }}
+            style={{ right: i * unitWidth, width: unitWidth }}
           />
         ))}
       </div>

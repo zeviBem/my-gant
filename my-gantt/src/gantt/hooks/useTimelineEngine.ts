@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TimeScale, TimelineRange } from "../types/timeline.types";
-import { buildCustomRange, buildHeaderLabel, buildRange } from "../helpers/time.helpers";
+import {
+  buildCustomRange,
+  buildHeaderLabel,
+  buildRange,
+} from "../helpers/time.helpers";
 
 export interface TimelineEngine {
   scale: TimeScale;
@@ -19,7 +23,10 @@ export function useTimelineEngine(
 ): TimelineEngine {
   const [scale, setScale] = useState<TimeScale>(initialScale);
   const [centerTime, setCenterTime] = useState<Date>(() => new Date());
-  const [customApplied, setCustomApplied] = useState<{ start: Date; end: Date } | null>(null);
+  const [customApplied, setCustomApplied] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
 
   useEffect(() => {
     setCenterTime(new Date());

@@ -43,7 +43,8 @@ export function TaskCard({
     setActive(true);
 
     const onMove = (ev: MouseEvent) => {
-      const dxMs = (ev.clientX - startX) * msPerPx;
+      // RTL: dragging right on screen moves toward earlier time, so invert the screen delta.
+      const dxMs = -(ev.clientX - startX) * msPerPx;
       let s = origStart;
       let en = origEnd;
       if (mode === "move") { s = origStart + dxMs; en = origEnd + dxMs; }
@@ -68,7 +69,7 @@ export function TaskCard({
     <div
       className={`gantt-bar scheduler-task-card${active ? " gantt-bar-active" : ""}`}
       style={{
-        left: layout.offsetPx,
+        right: layout.offsetPx,
         width: layout.widthPx,
         top: top ?? undefined,
         height: height ?? undefined,

@@ -356,6 +356,7 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  direction: rtl;
 }
 
 .scheduler-top-row {
@@ -403,7 +404,7 @@
 
 .scheduler-timeline-header-cell {
   box-sizing: border-box;
-  border-right: 1px solid #2F323A;
+  border-inline-end: 1px solid #2F323A;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -417,7 +418,7 @@
 }
 
 .scheduler-timeline-header-cell:last-child {
-  border-right: none;
+  border-inline-end: none;
 }
 
 .scheduler-hdr-primary {
@@ -470,7 +471,7 @@
   top: 0;
   bottom: 0;
   box-sizing: border-box;
-  border-right: 1px solid #2F323A;
+  border-inline-end: 1px solid #2F323A;
   background: transparent;
 }
 
@@ -549,9 +550,10 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 0;
+  inset-inline-end: 0;
   width: 4px;
-  border-radius: 0 8px 8px 0;
+  border-start-end-radius: 8px;
+  border-end-end-radius: 8px;
   pointer-events: none;
   z-index: 1;
 }
@@ -563,12 +565,14 @@
 }
 
 .scheduler-task-card .gantt-bar-handle-r {
-  right: 0;
+  inset-inline-end: 0;
+  right: auto;
   width: 6px;
 }
 
 .scheduler-task-card .gantt-bar-handle-l {
-  left: 0;
+  inset-inline-start: 0;
+  left: auto;
   width: 6px;
 }
 
@@ -597,7 +601,7 @@
   display: grid;
   grid-template-rows: 52px 1fr;
   background: #1A1B20;
-  border-left: 1px solid #2F323A;
+  border-inline-start: 1px solid #2F323A;
   min-height: 0;
   height: 100%;
 }
